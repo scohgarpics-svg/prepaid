@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prepaid Credit Request</title>
+<style>
+:root{--bg:#f6f7f4;--card:#fff;--text:#1d2a24;--muted:#5d6b64;--line:#d9dfda;--accent:#0b7a4b;--accent-t:#fff;--err:#b3261e}
+@media (prefers-color-scheme:dark){:root{--bg:#121815;--card:#1b241f;--text:#e8efe9;--muted:#9fb0a6;--line:#2f3d35;--accent:#3ecf8e;--accent-t:#08221a;--err:#ff8a80}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:480px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.5rem;margin:8px 0 4px}
+p.sub{color:var(--muted);margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+label{display:block;font-weight:600;margin:14px 0 6px;font-size:.95rem}
+input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font:inherit}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.err{color:var(--err);font-size:.85rem;min-height:1.1em;margin-top:4px}
+button{display:block;width:100%;padding:14px;border-radius:10px;border:0;font:inherit;font-weight:700;cursor:pointer;margin-top:16px;background:var(--accent);color:var(--accent-t)}
+button:disabled{opacity:.6;cursor:wait}
+button.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.ok{color:var(--accent);font-weight:700;font-size:1.1rem}
+.contact{margin-top:18px;text-align:center;color:var(--muted)}
+.contact a{color:var(--accent);font-weight:700;text-decoration:none;font-size:1.1rem}
+.hp{position:absolute;left:-9999px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<h1>Prepaid Credit Request</h1>
+
+<form class="card" id="form" novalidate>
+  <p class="sub">Fill in your details below. We will top up your meter or line as soon as we receive your request.</p>
+  <input class="hp" type="text" name="website" id="website" tabindex="-1" autocomplete="off">
+
+  <label for="name">Your name</label>
+  <input id="name" autocomplete="name" maxlength="80" placeholder="e.g. Kwame Mensah">
+  <div class="err" id="e-name"></div>
+
+  <label for="phone">Your phone number</label>
+  <input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="e.g. 0241234567">
+  <div class="err" id="e-phone"></div>
+
+  <label for="mtype">Meter type</label>
+  <select id="mtype"><option>Prepaid</option><option>Postpaid</option></select>
+
+  <label for="meter">Meter number</label>
+  <input id="meter" maxlength="20" placeholder="Enter your meter number">
+  <div class="err" id="e-meter"></div>
+
+  <label for="amount">Amount (GH₵)</label>
+  <input id="amount" type="number" inputmode="decimal" min="1" step="0.01" placeholder="e.g. 50">
+  <div class="err" id="e-amount"></div>
+
+  <div class="err" id="e-form"></div>
+  <button type="submit" id="go">Submit request</button>
+</form>
+
+<div class="card" id="done" hidden>
+  <p class="ok">Request received ✓</p>
+  <p>Thank you, <strong id="d-name"></strong>. Your request for <strong id="d-amt"></strong> has been recorded.<br>
+  Reference: <strong id="d-ref"></strong></p>
+  <p>You will receive your credit shortly. Questions? Call <a href="tel:0593635245">0593635245</a>.</p>
+  <button class="ghost" id="again" type="button">Make another request</button>
+</div>
+
+<div class="contact">Questions? Call or WhatsApp<br><a href="tel:0593635245">0593635245</a></div>
+</main>
+
+<script>
+// ====== PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL BETWEEN THE QUOTES ======
+var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz1sMacpciIbU-pThhysmZ-uMNsjYlynrHzb78nuZj5HXP0PaZrgxZYNYPS6vowDOI/exec";
+// ==========================================================================
+
+(function(){
+var $ = function(i){ return document.getElementById(i); };
+var busy = false;
+
+function check(){
+  var ok = true;
+  function set(k, m){ $("e-" + k).textContent = m; if (m) ok = false; }
+  set("name",  $("name").value.trim().length < 2 ? "Please enter your name." : "");
+  set("phone", /^(\+?233|0)\d{9}$/.test($("phone").value.replace(/[\s-]/g, "")) ? "" : "Enter a valid phone number.");
+  set("meter", /^[A-Za-z0-9-]{5,20}$/.test($("meter").value.trim()) ? "" : "Enter a valid meter number.");
+  set("amount", Number($("amount").value) >= 1 ? "" : "Enter an amount of GH₵1 or more.");
+  return ok;
+}
+
+function makeRef(){
+  var c = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", s = "";
+  for (var i = 0; i < 6; i++) s += c.charAt(Math.floor(Math.random() * c.length));
+  return s;
+}
+
+$("form").addEventListener("submit", function(ev){
+  ev.preventDefault();
+  if (busy) return;
+  $("e-form").textContent = "";
+  if (!check()) return;
+  if (!SCRIPT_URL) { $("e-form").textContent = "This form is not connected yet. Please call 0593635245."; return; }
+
+  var ref = makeRef();
+  var body = new URLSearchParams({
+    name: $("name").value.trim(),
+    phone: $("phone").value.trim(),
+    meter_type: $("mtype").value,
+    meter_number: $("meter").value.trim(),
+    amount: $("amount").value,
+    ref: ref,
+    website: $("website").value
+  });
+
+  busy = true; $("go").disabled = true; $("go").textContent = "Sending…";
+  fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: body })
+    .then(function(){
+      $("d-name").textContent = $("name").value.trim();
+      $("d-amt").textContent = "GH₵" + Number($("amount").value).toFixed(2);
+      $("d-ref").textContent = ref;
+      $("form").hidden = true; $("done").hidden = false;
+      window.scrollTo(0, 0);
+    })
+    .catch(function(){
+      $("e-form").textContent = "Could not send. Check your internet and try again, or call 0593635245.";
+    })
+    .then(function(){ busy = false; $("go").disabled = false; $("go").textContent = "Submit request"; });
+});
+
+$("again").addEventListener("click", function(){
+  $("form").reset(); $("done").hidden = true; $("form").hidden = false;
+});
+})();
+</script>
+</body>
+</html>
