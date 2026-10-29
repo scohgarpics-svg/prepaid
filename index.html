@@ -49,6 +49,9 @@ button.ghost{background:transparent;color:var(--text);border:1px solid var(--lin
   <label for="meter">Meter number</label>
   <input id="meter" maxlength="20" placeholder="Enter your meter number">
   <div class="err" id="e-meter"></div>
+  <label for="mname">Name on the meter</label>
+<input id="mname" maxlength="80" placeholder="Name the meter is registered under">
+<div class="err" id="e-mname"></div>
 
   <label for="amount">Amount (GH₵)</label>
   <input id="amount" type="number" inputmode="decimal" min="1" step="0.01" placeholder="e.g. 50">
@@ -74,7 +77,7 @@ button.ghost{background:transparent;color:var(--text);border:1px solid var(--lin
 
 <script>
 // ====== PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL BETWEEN THE QUOTES ======
-var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwib6ZK52pAiFnAea5d3Wrt_VhTKhoRrR5cwTOBgqioWDQspEER6WvbA3ix9Vct_U6u/exec";
+var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNF9m15-jkZQdXL_UQSzE3mYwjTnfY7WbfF3qHZRDj4dnI2u6Kc_53gdmY1t1GEfCt/exec";
 // ==========================================================================
 
 (function(){
@@ -87,6 +90,7 @@ function check(){
   set("name",  $("name").value.trim().length < 2 ? "Please enter your name." : "");
   set("phone", /^(\+?233|0)\d{9}$/.test($("phone").value.replace(/[\s-]/g, "")) ? "" : "Enter a valid phone number.");
   set("meter", /^[A-Za-z0-9-]{5,20}$/.test($("meter").value.trim()) ? "" : "Enter a valid meter number.");
+  set("mname", $("mname").value.trim().length < 2 ? "Please enter the name on the meter." : "");
   set("amount", Number($("amount").value) >= 1 ? "" : "Enter an amount of GH₵1 or more.");
   return ok;
 }
@@ -110,6 +114,7 @@ $("form").addEventListener("submit", function(ev){
     phone: $("phone").value.trim(),
     meter_type: $("mtype").value,
     meter_number: $("meter").value.trim(),
+    meter_name: $("mname").value.trim(),
     amount: $("amount").value,
     ref: ref,
     website: $("website").value
